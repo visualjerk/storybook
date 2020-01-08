@@ -321,7 +321,9 @@ class Preview extends Component<PreviewProps> {
               return (
                 <>
                   <Consumer filter={mapper}>
-                    {state => state.loading && <Loader role="progressbar" />}
+                    {(state: ReturnType<typeof mapper>) =>
+                      state.loading ? <Loader role="progressbar" /> : null
+                    }
                   </Consumer>
                   <ActualPreview {...props} frames={frames} currentUrl={currentUrl} />
                 </>
