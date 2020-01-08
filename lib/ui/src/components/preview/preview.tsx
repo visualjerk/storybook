@@ -295,6 +295,7 @@ class Preview extends Component<PreviewProps> {
       description,
       frames = {},
       story,
+      withLoader,
     } = this.props;
 
     const currentUrl = getUrl(story);
@@ -320,11 +321,13 @@ class Preview extends Component<PreviewProps> {
 
               return (
                 <>
-                  <Consumer filter={mapper}>
-                    {(state: ReturnType<typeof mapper>) =>
-                      state.loading ? <Loader role="progressbar" /> : null
-                    }
-                  </Consumer>
+                  {withLoader && (
+                    <Consumer filter={mapper}>
+                      {(state: ReturnType<typeof mapper>) =>
+                        state.loading ? <Loader role="progressbar" /> : null
+                      }
+                    </Consumer>
+                  )}
                   <ActualPreview {...props} frames={frames} currentUrl={currentUrl} />
                 </>
               );

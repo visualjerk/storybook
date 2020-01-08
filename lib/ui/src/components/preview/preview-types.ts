@@ -49,6 +49,7 @@ export interface PreviewProps extends PreviewPropsBase {
     isFullscreen: boolean;
     isToolshown: boolean;
   };
+  withLoader: boolean;
 }
 export interface Wrapper {
   render: (child: {
