@@ -1,4 +1,4 @@
-import { DOCS_MODE } from 'global';
+import { DOCS_MODE, location } from 'global';
 import { toId, sanitize, parseKind } from '@storybook/csf';
 import deprecate from 'util-deprecate';
 
@@ -44,6 +44,8 @@ interface Group {
 interface StoryInput {
   id: StoryId;
   name: string;
+  knownAs?: string;
+  source?: string;
   kind: string;
   children: string[];
   parameters: {
@@ -86,6 +88,29 @@ const warnChangingDefaultHierarchySeparators = deprecate(
 '|' and '.' will no longer create a hierarchy, but codemods are available.
 Read more about it in the migration guide: https://github.com/storybookjs/storybook/blob/master/MIGRATION.md`
 );
+
+export type Mapper = (ref: InceptionRef, story: StoryInput) => StoryInput;
+export interface InceptionRef {
+  id: string;
+  url: string;
+}
+
+export const getSourceType = (source: string, refs: Record<string, string>) => {
+  const { origin, pathname } = location;
+  const refsList = Object.entries(refs);
+
+  if (source === origin || source === `${origin + pathname}iframe.html`) {
+    return 'local';
+  }
+  if (refsList.some(([, url]: any) => url.match(source))) {
+    return 'ref';
+  }
+  return 'unknown';
+};
+
+export const defaultMapper: Mapper = (b, a) => {
+  return { ...a, kind: `${b.id}/${a.kind.replace('|', '/')}` };
+};
 
 const initStoriesApi = ({
   store,

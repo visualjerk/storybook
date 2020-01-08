@@ -13,6 +13,7 @@ import {
 } from '@storybook/core-events';
 import { RenderData as RouterData } from '@storybook/router';
 import { Listener } from '@storybook/channels';
+import { logger } from '@storybook/client-logger';
 import initProviderApi, { SubAPI as ProviderAPI, Provider } from './init-provider-api';
 
 import { createContext } from './context';
@@ -29,7 +30,9 @@ import initStories, {
   SubState as StoriesSubState,
   SubAPI as StoriesAPI,
   StoriesRaw,
-  Story,
+  defaultMapper,
+  getSourceType,
+  Mapper,
 } from './modules/stories';
 import initLayout, { SubState as LayoutSubState, SubAPI as LayoutAPI } from './modules/layout';
 import initShortcuts, {
@@ -106,12 +109,6 @@ type StatePartial = Partial<State>;
 
 export type Props = Children & RouterData & ProviderData & DocsModeData;
 
-interface InceptionRef {
-  id: string;
-  url: string;
-}
-type Mapper = (ref: InceptionRef, story: Story) => Story;
-
 class ManagerProvider extends Component<Props, State> {
   api: API;
 
@@ -186,47 +183,60 @@ class ManagerProvider extends Component<Props, State> {
     });
 
     api.on(SET_STORIES, function handleSetStories(data: { stories: StoriesRaw }) {
-      const defaultMapper: Mapper = (b: InceptionRef, a: Story): Story => {
-        return { ...a, kind: `${b.id}/${a.kind.replace('|', '/')}` };
-      };
+      // the event originates from an iframe, event.source is the iframe's location origin + pathname
+      const { source }: { source: string } = this;
+      const {
+        refs = {},
+        mapper = defaultMapper,
+      }: { refs: Record<string, string>; mapper: Mapper } = provider.getConfig();
 
-      const { source } = this;
-      const { refs, mapper = defaultMapper } = provider.getConfig();
+      const sourceType = getSourceType(source, refs);
 
-      const { origin, pathname } = location;
+      let out: StoriesRaw = {};
 
-      if (refs) {
-        const refsList = Object.entries(refs);
-        const match = source === origin || source === `${origin + pathname}iframe.html`;
+      switch (sourceType) {
+        // if it's a local source, we do nothing special
+        case 'local': {
+          out = data.stories;
+          break;
+        }
 
-        if (!match) {
-          const [id, u] =
-            refsList.find(([, url]: any) => url === source) ||
-            refsList.find(([, url]: any) => url.match(source));
+        // if it's a ref, we need to map the incoming stories to a prefixed version, so it cannot conflict with others
+        case 'ref': {
+          // find the exact ref, get it's id & url
+          const [refId, refUrl] = Object.entries(refs).find(([, url]) => url.match(source));
 
-          Object.entries(data.stories).forEach(([k, v]) => {
-            // eslint-disable-next-line no-param-reassign
-            delete data.stories[k];
-
-            const mapped = mapper ? mapper({ id, url: u }, v) : v;
+          // map the incoming stories to a prefixed, non-conclicting version
+          Object.entries(data.stories).forEach(([unmappedStoryId, unmappedStoryInput]) => {
+            const mapped = mapper
+              ? mapper({ id: refId, url: refUrl }, unmappedStoryInput)
+              : unmappedStoryInput;
 
             if (mapped) {
-              // eslint-disable-next-line no-param-reassign
-              data.stories[`${id}_${mapped.id}`] = {
+              const mappedStoryId = `${refId}_${mapped.id}`;
+              out[mappedStoryId] = {
                 ...mapped,
-                id: `${id}_${mapped.id}`,
-                knownAs: k,
-                source: u,
+                id: mappedStoryId,
+                knownAs: unmappedStoryId, // this is used later to emit the correct commands over the channel
+                source: refUrl, // this is used to know which iframe to emit the message to
               };
             }
           });
+          break;
+        }
+
+        // if we couldn't find the source, something risky happened, we ignore the input, and lo a warning
+        case 'unknown':
+        default: {
+          logger.warn('received a SET_STORIES frame that was not configured as a ref');
+          break;
         }
       }
 
-      api.setStories(data.stories);
+      api.setStories(out);
       const options = storyId
         ? api.getParameters(storyId, 'options')
-        : api.getParameters(Object.keys(data.stories)[0], 'options');
+        : api.getParameters(Object.keys(out)[0], 'options');
       api.setOptions(options);
     });
     api.on(
