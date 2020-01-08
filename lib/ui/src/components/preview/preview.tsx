@@ -4,13 +4,13 @@ import memoize from 'memoizerific';
 import copy from 'copy-to-clipboard';
 
 import { styled } from '@storybook/theming';
+import { Consumer, API } from '@storybook/api';
 import { SET_CURRENT_STORY } from '@storybook/core-events';
 import { types } from '@storybook/addons';
-import { Icons, IconButton, TabButton, TabBar, Separator } from '@storybook/components';
+import { Icons, IconButton, Loader, TabButton, TabBar, Separator } from '@storybook/components';
 
 import { Helmet } from 'react-helmet-async';
 
-import { API } from '@storybook/api';
 import { Toolbar } from './toolbar';
 
 import * as S from './components';
@@ -238,6 +238,9 @@ const getDocumentTitle = description => {
   return description ? `${description} ⋅ Storybook` : 'Storybook';
 };
 
+const mapper = ({ state }) => ({
+  loading: !state.storiesConfigured,
+});
 class Preview extends Component<PreviewProps> {
   shouldComponentUpdate({
     storyId,
@@ -315,7 +318,14 @@ class Preview extends Component<PreviewProps> {
                 customCanvas,
               };
 
-              return <ActualPreview {...props} frames={frames} currentUrl={currentUrl} />;
+              return (
+                <>
+                  <Consumer filter={mapper}>
+                    {state => state.loading && <Loader role="progressbar" />}
+                  </Consumer>
+                  <ActualPreview {...props} frames={frames} currentUrl={currentUrl} />
+                </>
+              );
             }}
           </ZoomConsumer>
         ),
