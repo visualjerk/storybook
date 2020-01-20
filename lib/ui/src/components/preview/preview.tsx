@@ -170,9 +170,8 @@ const getTools = memoize(10)(
         render: () => (
           <IconButton
             key="opener"
-            onClick={() =>
-              window.open(`${currentUrl}?id=${storyId}${stringifyQueryParams(queryParams)}`)
-            }
+            href={`${currentUrl}?id=${storyId}${stringifyQueryParams(queryParams)}`}
+            target="_blank"
             title="Open canvas in new tab"
           >
             <Icons icon="share" />
