@@ -8,6 +8,7 @@ import { AddonPanel } from '@storybook/components';
 
 addons.setConfig({
   theme: themes.dark,
+  showRoots: true,
   panelPosition: 'bottom',
   selectedPanel: 'storybook/roundtrip',
 });
