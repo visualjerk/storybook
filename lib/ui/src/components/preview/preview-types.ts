@@ -50,6 +50,12 @@ export interface PreviewProps extends PreviewPropsBase {
     isToolshown: boolean;
   };
   withLoader: boolean;
+  parameters: {
+    previewTabs: Record<
+      string,
+      null | Partial<{ title: string; hidden: boolean; disabled: boolean }>
+    >;
+  } & Record<string, any>;
 }
 export interface Wrapper {
   render: (child: {
@@ -86,4 +92,5 @@ export interface Panel {
   id: string;
   title: string;
   viewMode: ViewMode;
+  hidden?: boolean;
 }

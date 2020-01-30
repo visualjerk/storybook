@@ -2,11 +2,11 @@ import window from 'global';
 import React, { Component, Fragment, FunctionComponent } from 'react';
 import memoize from 'memoizerific';
 import copy from 'copy-to-clipboard';
-
 import { styled } from '@storybook/theming';
 import { Consumer, API } from '@storybook/api';
 import { SET_CURRENT_STORY } from '@storybook/core-events';
-import { types } from '@storybook/addons';
+import addons, { types } from '@storybook/addons';
+import merge from '@storybook/api/dist/lib/merge';
 import { Icons, IconButton, Loader, TabButton, TabBar, Separator } from '@storybook/components';
 
 import { Helmet } from 'react-helmet-async';
@@ -115,20 +115,22 @@ const getTools = memoize(10)(
     currentUrl: string
   ) => {
     const tools = getElementList(getElements, types.TOOL, [
-      panels.filter(p => p.id !== 'canvas').length
+      panels.filter(p => !p.hidden).length > 1
         ? {
             render: () => (
               <Fragment>
                 <TabBar key="tabs">
-                  {panels.map((t, index) => {
-                    const to = t.route({ storyId, viewMode, path, location });
-                    const isActive = path === to;
-                    return (
-                      <S.UnstyledLink key={t.id || `l${index}`} to={to}>
-                        <TabButton active={isActive}>{t.title}</TabButton>
-                      </S.UnstyledLink>
-                    );
-                  })}
+                  {panels
+                    .filter(p => !p.hidden)
+                    .map((t, index) => {
+                      const to = t.route({ storyId, viewMode, path, location });
+                      const isActive = path === to;
+                      return (
+                        <S.UnstyledLink key={t.id || `l${index}`} to={to}>
+                          <TabButton active={isActive}>{t.title}</TabButton>
+                        </S.UnstyledLink>
+                      );
+                    })}
                 </TabBar>
                 <Separator />
               </Fragment>
@@ -248,6 +250,7 @@ class Preview extends Component<PreviewProps> {
     docsOnly,
     queryParams,
     story,
+    parameters,
   }: PreviewProps) {
     const { props } = this;
     const newUrl = getUrl(story);
@@ -260,6 +263,7 @@ class Preview extends Component<PreviewProps> {
       storyId !== props.storyId ||
       docsOnly !== props.docsOnly ||
       queryParams !== props.queryParams ||
+      parameters !== props.parameters ||
       newUrl !== oldUrl
     );
   }
@@ -292,6 +296,7 @@ class Preview extends Component<PreviewProps> {
       customCanvas,
       options,
       description,
+      parameters,
       frames = {},
       story,
       withLoader,
@@ -300,7 +305,7 @@ class Preview extends Component<PreviewProps> {
     const currentUrl = getUrl(story);
     const toolbarHeight = options.isToolshown ? 40 : 0;
     const wrappers = getElementList(getElements, types.PREVIEW, defaultWrappers);
-    const panels = getElementList(getElements, types.TAB, [
+    let panels = getElementList(getElements, types.TAB, [
       {
         route: p => `/story/${p.storyId}`,
         match: p => p.viewMode && p.viewMode.match(/^(story|docs)$/),
@@ -337,6 +342,42 @@ class Preview extends Component<PreviewProps> {
         id: 'canvas',
       },
     ]);
+    const { previewTabs } = addons.getConfig();
+    const parametersTabs = parameters ? parameters.previewTabs : undefined;
+    if (previewTabs || parametersTabs) {
+      // deep merge global and local settings
+      const tabs = merge(previewTabs, parametersTabs);
+      const arrTabs = Object.keys(tabs).map((key, index) => ({
+        index,
+        ...(typeof tabs[key] === 'string' ? { title: tabs[key] } : tabs[key]),
+        id: key,
+      }));
+      panels = panels
+        .filter(panel => {
+          const t = arrTabs.find(tab => tab.id === panel.id);
+          return t === undefined || t.id === 'canvas' || !t.hidden;
+        })
+        .map((panel, index) => ({ ...panel, index }))
+        .sort((p1, p2) => {
+          const tab_1 = arrTabs.find(tab => tab.id === p1.id);
+          const index_1 = tab_1 ? tab_1.index : arrTabs.length + p1.index;
+          const tab_2 = arrTabs.find(tab => tab.id === p2.id);
+          const index_2 = tab_2 ? tab_2.index : arrTabs.length + p2.index;
+          return index_1 - index_2;
+        })
+        .map(panel => {
+          const t = arrTabs.find(tab => tab.id === panel.id);
+          if (t) {
+            return {
+              ...panel,
+              title: t.title || panel.title,
+              disabled: t.disabled,
+              hidden: t.hidden,
+            };
+          }
+          return panel;
+        });
+    }
     const { left, right } = getTools(
       getElements,
       queryParams,
@@ -359,10 +400,12 @@ class Preview extends Component<PreviewProps> {
               <title>{getDocumentTitle(description)}</title>
             </Helmet>
           )}
-          <Toolbar key="toolbar" shown={options.isToolshown} border>
-            <Fragment key="left">{left}</Fragment>
-            <Fragment key="right">{right}</Fragment>
-          </Toolbar>
+          {(left || right) && (
+            <Toolbar key="toolbar" shown={options.isToolshown} border>
+              <Fragment key="left">{left}</Fragment>
+              <Fragment key="right">{right}</Fragment>
+            </Toolbar>
+          )}
           <S.FrameWrap key="frame" offset={toolbarHeight}>
             {panels.map(p => (
               <Fragment key={p.id || p.key}>
