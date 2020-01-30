@@ -123,7 +123,7 @@ export class PostmsgTransport {
       const { data } = rawEvent;
       const { key, event, source } = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       if (key === KEY) {
-        event.source = source || rawEvent.origin;
+        event.source = source || getEventSourceUrl(rawEvent);
         logger.debug(
           `message arrived at ${this.config.page} from ${event.source}`,
           event.type,
@@ -137,6 +137,38 @@ export class PostmsgTransport {
     }
   }
 }
+
+const getEventSourceUrl = (event: MessageEvent) => {
+  const frames: HTMLIFrameElement[] = [...document.getElementsByTagName('iframe')];
+  let result = event.origin;
+  let frame;
+  let remainder;
+  try {
+    // try to find the originating iframe by matching it's contentWindow
+    // This might not be cross-origin safe
+    [frame, ...remainder] = frames.filter(element => element.contentWindow === event.source);
+
+    const src = frame.getAttribute('src');
+    const { pathname, origin } = new URL(src);
+
+    result = origin + pathname;
+  } catch (e) {
+    // if the contentWindow access was not allowed we match on origin alone
+    [frame, ...remainder] = frames.filter(element => {
+      const src = element.getAttribute('src');
+      const { origin } = new URL(src);
+
+      return origin === event.origin;
+    });
+  }
+
+  // If we found multiple matches, there's going to be trouble
+  if (remainder.length) {
+    return null;
+  }
+
+  return result;
+};
 
 /**
  * Creates a channel which communicates with an iframe or child window.
