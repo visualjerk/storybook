@@ -6,7 +6,9 @@ module.exports = {
     '@storybook/addon-preview-wrapper/register',
   ],
   refs: {
-    inception: 'https://storybookjs-next.now.sh/dev-kits/iframe.html',
+    ember: 'https://5e32a5d4977061000ca89459--storybookjs.netlify.com/ember-cli/iframe.html',
+    cra:
+      'https://5e32a5d4977061000ca89459--storybookjs.netlify.com/cra-ts-kitchen-sink/iframe.html',
   },
   webpack: async config => ({
     ...config,

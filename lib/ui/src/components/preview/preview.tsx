@@ -114,23 +114,24 @@ const getTools = memoize(10)(
     path: string,
     currentUrl: string
   ) => {
+    const nonHiddenPanels = panels.filter(p => p.hidden !== true);
+
     const tools = getElementList(getElements, types.TOOL, [
-      panels.filter(p => !p.hidden).length > 1
+      nonHiddenPanels.length > 1 ||
+      (nonHiddenPanels.length === 1 && nonHiddenPanels[0].id !== viewMode)
         ? {
             render: () => (
               <Fragment>
                 <TabBar key="tabs">
-                  {panels
-                    .filter(p => !p.hidden)
-                    .map((t, index) => {
-                      const to = t.route({ storyId, viewMode, path, location });
-                      const isActive = path === to;
-                      return (
-                        <S.UnstyledLink key={t.id || `l${index}`} to={to}>
-                          <TabButton active={isActive}>{t.title}</TabButton>
-                        </S.UnstyledLink>
-                      );
-                    })}
+                  {nonHiddenPanels.map((t, index) => {
+                    const to = t.route({ storyId, viewMode, path, location });
+                    const isActive = path === to;
+                    return (
+                      <S.UnstyledLink key={t.id || `l${index}`} to={to}>
+                        <TabButton active={isActive}>{t.title}</TabButton>
+                      </S.UnstyledLink>
+                    );
+                  })}
                 </TabBar>
                 <Separator />
               </Fragment>
@@ -342,8 +343,10 @@ class Preview extends Component<PreviewProps> {
         id: 'canvas',
       },
     ]);
+
     const { previewTabs } = addons.getConfig();
     const parametersTabs = parameters ? parameters.previewTabs : undefined;
+
     if (previewTabs || parametersTabs) {
       // deep merge global and local settings
       const tabs = merge(previewTabs, parametersTabs);
