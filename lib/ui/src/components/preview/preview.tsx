@@ -118,7 +118,7 @@ const getTools = memoize(10)(
 
     const tools = getElementList(getElements, types.TOOL, [
       nonHiddenPanels.length > 1 ||
-      (nonHiddenPanels.length === 1 && nonHiddenPanels[0].id !== viewMode)
+      (viewMode && nonHiddenPanels.length === 1 && nonHiddenPanels[0].id !== viewMode)
         ? {
             render: () => (
               <Fragment>
