@@ -164,6 +164,7 @@ const getEventSourceUrl = (event: MessageEvent) => {
 
   // If we found multiple matches, there's going to be trouble
   if (remainder.length) {
+    console.error('unable to locate origin of postmessage');
     return null;
   }
 
