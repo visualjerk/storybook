@@ -9,7 +9,7 @@ import {
 import { Module } from '../index';
 
 export interface SubState {
-  refs: Record<string, StoriesHash>;
+  refs: Record<string, InceptionRef & { data: StoriesHash }>;
 }
 
 export interface SubAPI {
@@ -81,7 +81,8 @@ const initRefsApi = ({ store, provider }: Module) => {
   };
 
   const setRef: SubAPI['setRef'] = (id, data) => {
-    const ref = { id, url: getRefs()[id] };
+    const url = getRefs()[id];
+    const ref = { id, url };
     const after = namespace(
       transformStoriesRawToStoriesHash(map(data, ref, { mapper: defaultMapper }), {}, {}),
       ref,
@@ -91,10 +92,22 @@ const initRefsApi = ({ store, provider }: Module) => {
     store.setState({
       refs: {
         ...(store.getState().refs || {}),
-        [id]: after,
+        [id]: { id, url, data: after },
       },
     });
   };
+
+  const initialState: SubState['refs'] = Object.entries(getRefs()).reduce(
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: {
+        id: key,
+        url: value,
+        data: {},
+      },
+    }),
+    {}
+  );
 
   return {
     api: {
@@ -102,7 +115,7 @@ const initRefsApi = ({ store, provider }: Module) => {
       getRefs,
     },
     state: {
-      refs: {},
+      refs: initialState,
     },
   };
 };

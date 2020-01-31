@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, Fragment } from 'react';
 
 import { styled } from '@storybook/theming';
 import { ScrollArea } from '@storybook/components';
@@ -38,11 +38,13 @@ export interface SidebarProps {
   storyId?: string;
   menuHighlighted?: boolean;
   loading?: boolean;
+  refs: State['refs'];
 }
 
 const Sidebar: FunctionComponent<SidebarProps> = ({
   storyId,
   stories,
+  refs,
   menu,
   menuHighlighted = false,
   loading = false,
@@ -51,6 +53,11 @@ const Sidebar: FunctionComponent<SidebarProps> = ({
     <CustomScrollArea vertical>
       <Heading className="sidebar-header" menuHighlighted={menuHighlighted} menu={menu} />
       <Stories stories={stories} storyId={storyId} loading={loading} />
+      {Object.values(refs).map(item => (
+        <Fragment key={item.id}>
+          <Stories stories={item.data} storyId={storyId} loading={!Object.keys(item.data).length} />
+        </Fragment>
+      ))}
     </CustomScrollArea>
   </Container>
 );

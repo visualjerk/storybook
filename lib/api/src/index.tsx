@@ -61,6 +61,7 @@ export type Module = StoreData &
 export type State = Other &
   LayoutSubState &
   StoriesSubState &
+  RefsSubState &
   NotificationState &
   VersionsSubState &
   RouterData &
