@@ -218,6 +218,7 @@ export const mapper = ({ state, api }) => {
     layout: { isFullscreen, showPanel, showNav },
     storiesHash,
     storiesConfigured,
+    refs,
   } = state;
   const stories = DOCS_MODE
     ? collapseAllStories(storiesHash)
@@ -229,6 +230,7 @@ export const mapper = ({ state, api }) => {
     title: name,
     url,
     stories,
+    refs,
     storyId,
     viewMode,
     menu: createMenu(api, shortcutKeys, isFullscreen, showPanel, showNav, enableShortcuts),
