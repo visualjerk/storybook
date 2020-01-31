@@ -10,6 +10,7 @@ import { TreeState } from './treeview/treeview';
 import SidebarItem from './SidebarItem';
 import SidebarSearch from './SidebarSearch';
 import SidebarSubheading from './SidebarSubheading';
+import { ViewMode } from '../preview/preview-types';
 
 const Search = styled(SidebarSearch)({
   margin: '0 20px 1rem',
@@ -53,9 +54,9 @@ const PlainLink = styled.a(plain);
 const Wrapper = styled.div({});
 
 export const viewMode = (
-  currentViewMode: string | undefined,
+  currentViewMode: ViewMode,
   isDocsOnly: boolean,
-  parameters: { viewMode?: string } = {}
+  parameters: { viewMode?: ViewMode } = {}
 ) => {
   const { viewMode: paramViewMode } = parameters;
   switch (true) {

@@ -15,7 +15,7 @@ import { Module } from '../index';
 type Direction = -1 | 1;
 type ParameterName = string;
 
-type ViewMode = 'story' | 'info' | 'settings' | undefined;
+type ViewMode = 'story' | 'info' | 'settings' | string | undefined;
 
 export interface SubState {
   storiesHash: StoriesHash;

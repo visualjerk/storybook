@@ -1,22 +1,20 @@
 import { types } from '@storybook/addons';
-import { API } from '@storybook/api';
+import { API, State } from '@storybook/api';
+import { InceptionRef } from '@storybook/api/dist/modules/refs';
+import { StoriesHash, Story } from '@storybook/api/dist/lib/stories';
 
 export type Noop = () => void;
 
-export type ViewMode = 'story' | 'info' | 'docs' | 'settings';
+export type ViewMode = State['viewMode'];
 
-export type PreviewStory = {
-  id: string;
-  source: string;
-  knownAs: string;
-};
+export type PreviewStory = Story;
 
 export type CustomCanvas = (
   viewMode: ViewMode,
   currentUrl: string,
   scale: number,
   queryParams: Record<string, any>,
-  frames: Record<string, string>,
+  frames: Record<string, InceptionRef & { data: StoriesHash }>,
   storyId?: string
 ) => JSX.Element;
 
@@ -31,7 +29,7 @@ export type PreviewElement = {
 
 export interface PreviewPropsBase {
   customCanvas?: CustomCanvas;
-  frames?: Record<string, string>;
+  frames?: Record<string, InceptionRef & { data: StoriesHash }>;
   queryParams: Record<string, any>;
   storyId?: string;
   story?: PreviewStory;
@@ -43,7 +41,7 @@ export interface PreviewProps extends PreviewPropsBase {
   api: API;
   story?: PreviewStory;
   path: string;
-  location: Location;
+  location: State['location'];
   getElements: API['getElements'];
   options: {
     isFullscreen: boolean;
@@ -75,14 +73,14 @@ export interface ActualPreviewProps extends PreviewPropsBase {
   wrappers: Wrapper[];
   active: boolean;
   scale: number;
-  frames: Record<string, string>;
+  frames: Record<string, InceptionRef & { data: StoriesHash }>;
   currentUrl: string;
 }
 
 export interface RouteParameter {
   storyId?: string;
   viewMode: ViewMode;
-  location: Location;
+  location: State['location'];
   path: string;
 }
 

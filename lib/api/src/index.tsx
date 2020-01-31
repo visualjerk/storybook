@@ -286,6 +286,8 @@ class ManagerProvider extends Component<Props, State> {
   }
 }
 
+export type StateFilter = (combo: Combo) => { [key: string]: any };
+
 interface ConsumerProps<S, C> {
   filter?: (combo: C) => S;
   pure?: boolean;

@@ -1,4 +1,4 @@
-import { location } from 'global';
+import { location, PREVIEW_URL } from 'global';
 import {
   transformStoriesRawToStoriesHash,
   StoriesRaw,
@@ -50,7 +50,7 @@ const namespace = (input: StoriesHash, ref: InceptionRef, options: {}): StoriesH
         ...mapped,
         id: mappedStoryId,
         knownAs: unmappedStoryId, // this is used later to emit the correct commands over the channel
-        source: ref.url, // this is used to know which iframe to emit the message to
+        ref, // this is used to know which iframe to emit the message to
       };
       if (mapped.children) {
         output[mappedStoryId].children = mapped.children.map((c: string) => `${ref.id}_${c}`);
@@ -106,7 +106,13 @@ const initRefsApi = ({ store, provider }: Module) => {
         data: {},
       },
     }),
-    {}
+    {
+      'storybook-preview-iframe': {
+        id: 'storybook-preview-iframe',
+        url: PREVIEW_URL || 'iframe.html',
+        data: {},
+      },
+    }
   );
 
   return {

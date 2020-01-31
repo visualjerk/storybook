@@ -3,7 +3,7 @@ import React, { Component, Fragment, FunctionComponent } from 'react';
 import memoize from 'memoizerific';
 import copy from 'copy-to-clipboard';
 import { styled } from '@storybook/theming';
-import { Consumer, API } from '@storybook/api';
+import { Consumer, API, State } from '@storybook/api';
 import { SET_CURRENT_STORY } from '@storybook/core-events';
 import addons, { types } from '@storybook/addons';
 import merge from '@storybook/api/dist/lib/merge';
@@ -11,6 +11,8 @@ import { Icons, IconButton, Loader, TabButton, TabBar, Separator } from '@storyb
 
 import { Helmet } from 'react-helmet-async';
 
+import { InceptionRef } from '@storybook/api/dist/modules/refs';
+import { StoriesHash } from '@storybook/api/dist/lib/stories';
 import { Toolbar } from './toolbar';
 
 import * as S from './components';
@@ -37,11 +39,11 @@ const renderIframe = (
   currentUrl: string,
   scale: number,
   queryParams: {},
-  frames: Record<string, string> = {},
+  frames: Record<string, InceptionRef & { data: StoriesHash }>,
   storyId = ''
 ) => (
   <Fragment key="iframe">
-    {Object.entries(frames).map(([id, url]) => (
+    {Object.entries(frames).map(([id, { url }]) => (
       <IFrame
         key={id}
         id={id}
@@ -109,8 +111,8 @@ const getTools = memoize(10)(
     docsOnly: boolean,
     options: PreviewProps['options'],
     storyId: PreviewProps['storyId'],
-    viewMode: ViewMode,
-    location: Location,
+    viewMode: State['viewMode'],
+    location: State['location'],
     path: string,
     currentUrl: string
   ) => {
@@ -233,7 +235,7 @@ const getTools = memoize(10)(
 );
 
 const getUrl = story => {
-  return (story && story.source) || `iframe.html`;
+  return (story && story.ref && story.ref.url) || `iframe.html`;
 };
 
 const getDocumentTitle = description => {
