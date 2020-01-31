@@ -87,7 +87,7 @@ const initRefsApi = ({ store, provider }: Module) => {
       ref,
       {}
     );
-    console.log('setRef', { id, data, after });
+
     store.setState({
       refs: {
         ...(store.getState().refs || {}),
