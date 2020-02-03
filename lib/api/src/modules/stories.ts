@@ -50,9 +50,14 @@ const initStoriesApi = ({
   };
 
   const getData = (storyId: StoryId) => {
-    const { storiesHash } = store.getState();
+    const { storiesHash, refs } = store.getState();
 
-    return storiesHash[storyId];
+    if (storiesHash[storyId]) {
+      return storiesHash[storyId];
+    }
+
+    const ref = Object.values(refs).find(r => r && r.data && r.data[storyId]);
+    return ref ? ref.data[storyId] : undefined;
   };
   const getCurrentStoryData = () => {
     const { storyId } = store.getState();

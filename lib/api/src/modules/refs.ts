@@ -106,13 +106,7 @@ const initRefsApi = ({ store, provider }: Module) => {
         data: {},
       },
     }),
-    {
-      'storybook-preview-iframe': {
-        id: 'storybook-preview-iframe',
-        url: PREVIEW_URL || 'iframe.html',
-        data: {},
-      },
-    }
+    {}
   );
 
   return {

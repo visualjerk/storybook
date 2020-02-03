@@ -1,5 +1,5 @@
 import window from 'global';
-import React, { Component, Fragment, FunctionComponent } from 'react';
+import React, { Fragment, PureComponent, FunctionComponent, useEffect } from 'react';
 import memoize from 'memoizerific';
 import copy from 'copy-to-clipboard';
 import { styled } from '@storybook/theming';
@@ -12,7 +12,7 @@ import { Icons, IconButton, Loader, TabButton, TabBar, Separator } from '@storyb
 import { Helmet } from 'react-helmet-async';
 
 import { InceptionRef } from '@storybook/api/dist/modules/refs';
-import { StoriesHash } from '@storybook/api/dist/lib/stories';
+import { StoriesHash, Story } from '@storybook/api/dist/lib/stories';
 import { Toolbar } from './toolbar';
 
 import * as S from './components';
@@ -245,46 +245,19 @@ const getDocumentTitle = description => {
 const mapper = ({ state }) => ({
   loading: !state.storiesConfigured,
 });
-class Preview extends Component<PreviewProps> {
-  shouldComponentUpdate({
-    storyId,
-    viewMode,
-    options,
-    docsOnly,
-    queryParams,
-    story,
-    parameters,
-  }: PreviewProps) {
-    const { props } = this;
-    const newUrl = getUrl(story);
-    const oldUrl = getUrl(props.story);
 
-    return (
-      options.isFullscreen !== props.options.isFullscreen ||
-      options.isToolshown !== props.options.isToolshown ||
-      viewMode !== props.viewMode ||
-      storyId !== props.storyId ||
-      docsOnly !== props.docsOnly ||
-      queryParams !== props.queryParams ||
-      parameters !== props.parameters ||
-      newUrl !== oldUrl
-    );
-  }
+const EmitOnChannel: FunctionComponent<{ viewMode: ViewMode; story: Story; api: API }> = ({
+  api,
+  viewMode,
+  story,
+}) => {
+  useEffect(() => {
+    api.emit(SET_CURRENT_STORY, { storyId: story.knownAs || story.id, viewMode });
+  }, [story, viewMode]);
+  return null;
+};
 
-  componentDidUpdate(prevProps) {
-    const { api, storyId, viewMode, story } = this.props;
-
-    const { viewMode: prevViewMode } = prevProps;
-
-    if (
-      story &&
-      (story.id !== (prevProps.story ? prevProps.story.id : prevProps.storyId) ||
-        (viewMode && viewMode !== prevViewMode))
-    ) {
-      api.emit(SET_CURRENT_STORY, { storyId: story.knownAs || story.id || storyId, viewMode });
-    }
-  }
-
+class Preview extends PureComponent<PreviewProps> {
   render() {
     const {
       path,
@@ -400,6 +373,7 @@ class Preview extends Component<PreviewProps> {
     return (
       <ZoomProvider>
         <Fragment>
+          {story ? <EmitOnChannel viewMode={viewMode} story={story} api={api} /> : null}
           {viewMode === 'story' && (
             <Helmet key="description">
               <title>{getDocumentTitle(description)}</title>

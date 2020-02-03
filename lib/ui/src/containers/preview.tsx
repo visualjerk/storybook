@@ -1,9 +1,16 @@
+import { PREVIEW_URL } from 'global';
 import React from 'react';
+import memoize from 'memoizerific';
 
 import { Consumer, Combo } from '@storybook/api';
 
 import { Story } from '@storybook/api/dist/lib/stories';
 import { Preview } from '../components/preview/preview';
+
+const mergeRefs = memoize(1)(refs => ({
+  ...refs,
+  'storybook-preview-iframe': { id: 'storybook-preview-iframe', url: PREVIEW_URL || 'iframe.html' },
+}));
 
 const nonAlphanumSpace = /[^a-z0-9 ]/gi;
 const doubleSpace = /\s\s/gi;
@@ -22,7 +29,7 @@ const mapper = ({ api, state }: Combo) => {
 
   return {
     api,
-    frames: state.refs,
+    frames: mergeRefs(state.refs),
     story: api.getData(storyId) as Story | undefined,
     getElements: api.getElements,
     options: layout,
