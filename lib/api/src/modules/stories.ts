@@ -50,14 +50,24 @@ const initStoriesApi = ({
   };
 
   const getData = (storyId: StoryId) => {
+    let ref;
     const { storiesHash, refs } = store.getState();
 
     if (storiesHash[storyId]) {
       return storiesHash[storyId];
     }
 
-    const ref = Object.values(refs).find(r => r && r.data && r.data[storyId]);
-    return ref ? ref.data[storyId] : undefined;
+    ref = Object.values(refs).find(r => r && r.data && r.data[storyId]);
+    if (ref && ref.data[storyId]) {
+      return ref.data[storyId];
+    }
+
+    // ref = Object.values(refs).find(r => r && r.data && Object.values(r.data).find(v => v.id === storyId));
+    // if (ref && ref.data[storyId]) {
+    //   return ref.data[storyId];
+    // }
+
+    return undefined;
   };
   const getCurrentStoryData = () => {
     const { storyId } = store.getState();
@@ -205,26 +215,38 @@ const initStoriesApi = ({
     });
   };
 
-  const selectStory = (kindOrId: string, story?: string) => {
-    const { viewMode = 'story', storyId, storiesHash } = store.getState();
+  const selectStory = (
+    kindOrId: string,
+    story: string = undefined,
+    { ref }: { ref?: string } = {}
+  ) => {
+    const { viewMode = 'story', storyId, storiesHash, refs } = store.getState();
+
+    const hash = ref ? refs[ref].data : storiesHash;
+
+    console.log('selectStory', { hash, kindOrId, story });
+
     if (!story) {
-      const s = storiesHash[sanitize(kindOrId)];
+      const real = sanitize(kindOrId);
+      const s = ref ? hash[`${ref}_${real}`] : hash[real];
       // eslint-disable-next-line no-nested-ternary
       const id = s ? (s.children ? s.children[0] : s.id) : kindOrId;
       navigate(`/${viewMode}/${id}`);
     } else if (!kindOrId) {
       // This is a slugified version of the kind, but that's OK, our toId function is idempotent
       const kind = storyId.split('--', 2)[0];
-      selectStory(toId(kind, story));
+      const id = toId(kind, story);
+
+      selectStory(id);
     } else {
-      const id = toId(kindOrId, story);
-      if (storiesHash[id]) {
+      const id = ref ? `${ref}_${toId(kindOrId, story)}` : toId(kindOrId, story);
+      if (hash[id]) {
         selectStory(id);
       } else {
         // Support legacy API with component permalinks, where kind is `x/y` but permalink is 'z'
-        const k = storiesHash[sanitize(kindOrId)];
+        const k = hash[sanitize(kindOrId)];
         if (k && k.children) {
-          const foundId = k.children.find(childId => storiesHash[childId].name === story);
+          const foundId = k.children.find(childId => hash[childId].name === story);
           if (foundId) {
             selectStory(foundId);
           }

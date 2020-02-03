@@ -221,12 +221,37 @@ class ManagerProvider extends Component<Props, State> {
         }
       }
     });
-    api.on(
-      SELECT_STORY,
-      ({ kind, story, ...rest }: { kind: string; story: string; [k: string]: any }) => {
-        api.selectStory(kind, story, rest);
+    api.on(SELECT_STORY, function selectStoryHandler({
+      kind,
+      story,
+      ...rest
+    }: {
+      kind: string;
+      story: string;
+      [k: string]: any;
+    }) {
+      const { source }: { source: string } = this;
+      const sourceType = getSourceType(source);
+
+      switch (sourceType) {
+        case 'local': {
+          api.selectStory(kind, story, rest);
+          break;
+        }
+
+        case 'external': {
+          const refs = api.getRefs();
+          const [refId] = Object.entries(refs).find(([, url]) => url.match(source));
+
+          api.selectStory(kind, story, { ...rest, ref: refId });
+          break;
+        }
+        default: {
+          logger.warn('received a SET_STORIES frame that was not configured as a ref');
+          break;
+        }
       }
-    );
+    });
     api.on(NAVIGATE_URL, (url: string, options: { [k: string]: any }) => {
       api.navigateUrl(url, options);
     });
