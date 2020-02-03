@@ -37,7 +37,6 @@ const stringifyQueryParams = (queryParams: Record<string, any>): string =>
 const renderIframe = (
   viewMode: ViewMode,
   currentUrl: string,
-  scale: number,
   queryParams: {},
   frames: Record<string, InceptionRef & { data: StoriesHash }>,
   storyId = ''
@@ -52,7 +51,6 @@ const renderIframe = (
         title={id || 'preview'}
         src={`${url}?id=${storyId}&viewMode=${viewMode}${stringifyQueryParams(queryParams)}`}
         allowFullScreen
-        scale={scale}
       />
     ))}
   </Fragment>
@@ -73,30 +71,37 @@ const ActualPreview: FunctionComponent<ActualPreviewProps> = ({
 }: ActualPreviewProps) => {
   const base = customCanvas
     ? customCanvas(viewMode, currentUrl, scale, queryParams, frames, storyId)
-    : renderIframe(viewMode, currentUrl, scale, queryParams, frames, storyId);
+    : renderIframe(viewMode, currentUrl, queryParams, frames, storyId);
   return wrappers.reduceRight(
     (acc, wrapper, index) => wrapper.render({ index, children: acc, storyId, active }),
     base
   );
 };
 
-const IframeWrapper = styled.div(({ theme }) => ({
+const FramesWrapper = styled.div<{ scale: number }>(({ theme, scale = 1 }) => ({
   position: 'absolute',
   top: 0,
   left: 0,
   bottom: 0,
   right: 0,
-  width: '100%',
-  height: '100%',
   background: theme.background.content,
+  width: `${scale * 100}%`,
+  height: `${scale * 100}%`,
+  transform: `scale(${1 / scale})`,
+  transformOrigin: 'top left',
+  transition: 'none',
 }));
 
 const defaultWrappers: Wrapper[] = [
   {
     render: p => (
-      <IframeWrapper id="storybook-preview-wrapper" hidden={!p.active}>
-        {p.children}
-      </IframeWrapper>
+      <ZoomConsumer>
+        {({ value }: { value: number }) => (
+          <FramesWrapper id="storybook-preview-wrapper" hidden={!p.active} scale={value}>
+            {p.children}
+          </FramesWrapper>
+        )}
+      </ZoomConsumer>
     ),
   },
 ];
@@ -285,35 +290,31 @@ class Preview extends PureComponent<PreviewProps> {
       {
         route: p => `/story/${p.storyId}`,
         match: p => p.viewMode && p.viewMode.match(/^(story|docs)$/),
-        render: p => (
-          <ZoomConsumer>
-            {({ value }) => {
-              const props = {
-                viewMode,
-                active: p.active,
-                wrappers,
-                story,
-                storyId,
-                queryParams,
-                scale: value,
-                customCanvas,
-              };
+        render: p => {
+          const props = {
+            viewMode,
+            active: p.active,
+            wrappers,
+            story,
+            storyId,
+            queryParams,
+            customCanvas,
+          };
 
-              return (
-                <>
-                  {withLoader && (
-                    <Consumer filter={mapper}>
-                      {(state: ReturnType<typeof mapper>) =>
-                        state.loading ? <Loader role="progressbar" /> : null
-                      }
-                    </Consumer>
-                  )}
-                  <ActualPreview {...props} frames={frames} currentUrl={currentUrl} />
-                </>
-              );
-            }}
-          </ZoomConsumer>
-        ),
+          return (
+            <>
+              {withLoader && (
+                <Consumer filter={mapper}>
+                  {(state: ReturnType<typeof mapper>) =>
+                    state.loading ? <Loader role="progressbar" /> : null
+                  }
+                </Consumer>
+              )}
+              <ActualPreview {...props} frames={frames} currentUrl={currentUrl} />
+            </>
+          );
+        },
+
         title: 'Canvas',
         id: 'canvas',
       },

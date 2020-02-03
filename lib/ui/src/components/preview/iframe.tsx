@@ -1,4 +1,4 @@
-import { document, navigator } from 'global';
+import { document } from 'global';
 import React, { Component, CSSProperties } from 'react';
 
 import { styled } from '@storybook/theming';
@@ -9,7 +9,6 @@ interface IFrameProps {
   title: string;
   src: string;
   allowFullScreen: boolean;
-  scale: number;
 }
 
 interface StyledIFrameProps {
@@ -20,8 +19,6 @@ interface StyledIFrameProps {
   startedActive: boolean;
   allowFullScreen: boolean;
 }
-
-const FIREFOX_BROWSER = 'Firefox';
 
 const StyledIframe = styled.iframe(
   {
@@ -47,45 +44,18 @@ export class IFrame extends Component<IFrameProps, {}> {
     this.iframe = (document as Document).getElementById(id) as HTMLIFrameElement;
   }
 
-  shouldComponentUpdate(nextProps: IFrameProps) {
-    const { scale, isActive } = this.props;
+  shouldComponentUpdate({ isActive }: IFrameProps) {
+    const { isActive: wasActive } = this.props;
 
-    if (scale !== nextProps.scale) {
-      if (navigator.userAgent.indexOf(FIREFOX_BROWSER) !== -1) {
-        this.setIframeBodyStyle({
-          width: `${nextProps.scale * 100}%`,
-          height: `${nextProps.scale * 100}%`,
-          transform: `scale(${1 / nextProps.scale})`,
-          transformOrigin: 'top left',
-        });
-      } else {
-        this.setIframeBodyStyle({
-          zoom: 1 / nextProps.scale,
-        });
-      }
-    }
-
-    if (isActive !== nextProps.isActive) {
+    if (isActive !== wasActive) {
       this.setIframeStyle({
-        visibility: nextProps.isActive ? 'visible' : 'hidden',
+        visibility: isActive ? 'visible' : 'hidden',
       });
     }
 
     // this component renders an iframe, which gets updates via post-messages
     // never update this component, it will cause the iframe to refresh
     return false;
-  }
-
-  setIframeBodyStyle(style: CSSProperties) {
-    try {
-      return (
-        this.iframe !== null &&
-        this.iframe.contentDocument &&
-        Object.assign(this.iframe.contentDocument.body.style, style)
-      );
-    } catch (e) {
-      return false;
-    }
   }
 
   setIframeStyle(style: CSSProperties) {
@@ -97,7 +67,7 @@ export class IFrame extends Component<IFrameProps, {}> {
   }
 
   render() {
-    const { id, title, src, allowFullScreen, scale, isActive, ...rest } = this.props;
+    const { id, title, src, allowFullScreen, isActive, ...rest } = this.props;
     return (
       <StyledIframe
         scrolling="yes"
