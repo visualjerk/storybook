@@ -41,19 +41,18 @@ export const defaultMapper: Mapper = (b, a) => {
 
 const namespace = (input: StoriesHash, ref: InceptionRef, options: {}): StoriesHash => {
   const output = {} as StoriesHash;
-  Object.entries(input).forEach(([unmappedStoryId, unmappedStoryInput]) => {
-    const mapped = unmappedStoryInput;
-
-    if (mapped) {
-      const mappedStoryId = `${ref.id}_${mapped.id}`;
+  Object.entries(input).forEach(([id, item]) => {
+    if (item) {
+      const mappedStoryId = `${ref.id}_${item.id}`;
       output[mappedStoryId] = {
-        ...mapped,
+        ...item,
         id: mappedStoryId,
-        knownAs: unmappedStoryId, // this is used later to emit the correct commands over the channel
+        parent: `${ref.id}_${item.parent}`,
+        knownAs: id, // this is used later to emit the correct commands over the channel
         ref, // this is used to know which iframe to emit the message to
       };
-      if (mapped.children) {
-        output[mappedStoryId].children = mapped.children.map((c: string) => `${ref.id}_${c}`);
+      if (item.children) {
+        output[mappedStoryId].children = item.children.map((c: string) => `${ref.id}_${c}`);
       }
     }
   });
