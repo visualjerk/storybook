@@ -6,9 +6,15 @@ import { useAddonState, useStoryState } from '@storybook/api';
 import { themes } from '@storybook/theming';
 import { AddonPanel } from '@storybook/components';
 
+import logo from './logo.svg';
+
 addons.setConfig({
-  theme: themes.dark,
   showRoots: true,
+  theme: {
+    brandImage: logo,
+    brandTitle: 'Custom - Storybook',
+    ...themes.dark,
+  },
   panelPosition: 'bottom',
   selectedPanel: 'storybook/roundtrip',
 });
